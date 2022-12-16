@@ -1,0 +1,3 @@
+<div *ngFor="let day of days" (click)="goto(day)" [class.selected]="day === current" [class.unavailable]="!(day | isDayAvailable)">
+    {{ day }}
+</div>
