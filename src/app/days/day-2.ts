@@ -4,34 +4,34 @@ import { sum } from './../utils/calc.utils'
 
 const Shapes = ['ROCK', 'PAPER', 'SCISSORS'] as const
 type Shape = typeof Shapes[number]
-function isShape(val: any): val is Shape {
-  return Shapes.includes(val)
+function isShape(shape: any): shape is Shape {
+  return Shapes.includes(shape)
 }
 
 const MatchResults = ['LOSE', 'DRAW', 'WIN'] as const
 type MatchResult = typeof MatchResults[number]
-function isMatchResult(val: any): val is MatchResult {
-  return MatchResults.includes(val)
+function isMatchResult(matchResult: any): matchResult is MatchResult {
+  return MatchResults.includes(matchResult)
 }
 
-const OpponentShapes = ['A', 'B', 'C'] as const
-type OpponentShape = typeof OpponentShapes[number]
-function isOpponentShape(val: any): val is OpponentShape {
-  return OpponentShapes.includes(val)
+const Values1 = ['A', 'B', 'C'] as const
+type Value1 = typeof Values1[number]
+function isValue1(value1: any): value1 is Value1 {
+  return Values1.includes(value1)
 }
 
-const MyShapes = ['X', 'Y', 'Z'] as const
-type MyShape = typeof MyShapes[number]
-function isMyShape(val: any): val is MyShape {
-  return MyShapes.includes(val)
+const Values2 = ['X', 'Y', 'Z'] as const
+type Value2 = typeof Values2[number]
+function isValue2(value2: any): value2 is Value2 {
+  return Values2.includes(value2)
 }
 
 type Match = {
-  opponentShape: OpponentShape,
-  myShape: MyShape,
+  val1: Value1,
+  val2: Value2,
 }
-function isMatch(val: any): val is Match {
-  return isOpponentShape(val.opponentShape) && isMyShape(val.myShape)
+function isMatch(match: any): match is Match {
+  return isValue1(match.val1) && isValue2(match.val2)
 }
 
 const ShapeScore: { [key in Shape]: number } = {
@@ -44,15 +44,20 @@ const MatchScore: { [key in MatchResult]: number } = {
   DRAW: 3,
   WIN: 6,
 }
-const OpponentShapeTranslator: { [key in OpponentShape]: Shape } = {
+const Value1Translator: { [key in Value1]: Shape } = {
   A: 'ROCK',
   B: 'PAPER',
   C: 'SCISSORS',
 }
-const MyShapeTranslator: { [key in MyShape]: Shape } = {
+const Value2TranslatorStep1: { [key in Value2]: Shape } = {
   X: 'ROCK',
   Y: 'PAPER',
   Z: 'SCISSORS',
+}
+const Value2TranslatorStep2: { [key in Value2]: MatchResult } = {
+  X: 'LOSE',
+  Y: 'DRAW',
+  Z: 'WIN',
 }
 
 @Injectable({
@@ -65,8 +70,8 @@ export class Day2 extends Day {
   override async prepareData(): Promise<void> {
     await super.prepareData()
     this.guide = this.data.trim().split('\n').map(line => {
-      const [opponentShape, myShape] = line.split(' ')
-      const match = { opponentShape, myShape }
+      const [val1, val2] = line.split(' ')
+      const match = { val1, val2 }
       if (isMatch(match)) {
         return match
       }
@@ -76,12 +81,17 @@ export class Day2 extends Day {
 
   override step1(): string {
     return sum(this.guide.map(match => {
-      return ShapeScore[MyShapeTranslator[match.myShape]] + MatchScore[Day2.getMatchResult(match)]
+      const myShape = Value2TranslatorStep1[match.val2]
+      const opponentShape = Value1Translator[match.val1]
+      const myShapeScore = ShapeScore[myShape]
+      const matchResult = Day2.getMatchResult(myShape, opponentShape)
+      const matchScore = MatchScore[matchResult]
+      return myShapeScore + matchScore
     })).toString()
   }
 
-  private static getMatchResult(match: Match): MatchResult {
-    switch (ShapeScore[MyShapeTranslator[match.myShape]] - ShapeScore[OpponentShapeTranslator[match.opponentShape]]) {
+  private static getMatchResult(myShape: Shape, opponentShape: Shape): MatchResult {
+    switch (ShapeScore[myShape] - ShapeScore[opponentShape]) {
       case 1:
       case -2:
         return 'WIN'
@@ -95,6 +105,38 @@ export class Day2 extends Day {
   }
 
   override step2(): string {
-    return 'ok'
+    return sum(this.guide.map(match => {
+      const matchResult = Value2TranslatorStep2[match.val2]
+      const opponentShape = Value1Translator[match.val1]
+      const matchScore = MatchScore[matchResult]
+      const myShape = Day2.getMyShape(matchResult, opponentShape)
+      const myShapeScore = ShapeScore[myShape]
+      return myShapeScore + matchScore
+    })).toString()
+  }
+
+  private static getMyShape(matchResult: MatchResult, opponentShape: Shape): Shape {
+    switch (matchResult) {
+      case 'DRAW':
+        return opponentShape;
+      case 'WIN':
+        switch (opponentShape) {
+          case 'PAPER':
+            return 'SCISSORS'
+          case 'SCISSORS':
+            return 'ROCK'
+          case 'ROCK':
+            return 'PAPER'
+        }
+      case 'LOSE':
+        switch (opponentShape) {
+          case 'PAPER':
+            return 'ROCK'
+          case 'ROCK':
+            return 'SCISSORS'
+          case 'SCISSORS':
+            return 'PAPER'
+        }
+    }
   }
 }
