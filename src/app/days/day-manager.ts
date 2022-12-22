@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Day1 } from './day-1';
 import { Day2 } from './day-2';
+import { Day3 } from './day-3';
 import { DayData } from './day-data.interface';
 import { Day } from './day.class';
 
@@ -13,6 +14,7 @@ export class DayManager {
   constructor(
     private day1: Day1,
     private day2: Day2,
+    private day3: Day3,
   ) {
   }
 
